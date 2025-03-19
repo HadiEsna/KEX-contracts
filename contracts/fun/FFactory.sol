@@ -5,9 +5,11 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
 import "./FPair.sol";
 
-contract FFactory is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable {
+contract FFactory is Initializable, AccessControl, ReentrancyGuard {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
 
@@ -29,8 +31,8 @@ contract FFactory is Initializable, AccessControlUpgradeable, ReentrancyGuardUpg
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor() AccessControl() ReentrancyGuard() {
+        // _disableInitializers();
     }
 
     function initialize(
@@ -38,8 +40,6 @@ contract FFactory is Initializable, AccessControlUpgradeable, ReentrancyGuardUpg
         uint256 buyTax_,
         uint256 sellTax_
     ) external initializer {
-        __AccessControl_init();
-        __ReentrancyGuard_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         taxVault = taxVault_;

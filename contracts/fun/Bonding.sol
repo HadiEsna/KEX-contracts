@@ -5,6 +5,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
@@ -15,11 +16,7 @@ import "./FRouter.sol";
 import "./FERC20.sol";
 import "../virtualPersona/IAgentFactoryV3.sol";
 
-contract Bonding is
-    Initializable,
-    ReentrancyGuardUpgradeable,
-    OwnableUpgradeable
-{
+contract Bonding is Initializable, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address private _feeTo;
@@ -90,8 +87,8 @@ contract Bonding is
     event Graduated(address indexed token, address agentToken);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor() Ownable(msg.sender) ReentrancyGuard() {
+        // _disableInitializers();
     }
 
     function initialize(
@@ -105,9 +102,6 @@ contract Bonding is
         address agentFactory_,
         uint256 gradThreshold_
     ) external initializer {
-        __Ownable_init(msg.sender);
-        __ReentrancyGuard_init();
-
         factory = FFactory(factory_);
         router = FRouter(router_);
 
@@ -195,7 +189,7 @@ contract Bonding is
         uint256 purchaseAmount
     ) public nonReentrant returns (address, address, uint) {
         require(
-            purchaseAmount > fee,
+            purchaseAmount >= fee,
             "Purchase amount must be greater than fee"
         );
         address assetToken = router.assetToken();
@@ -211,7 +205,12 @@ contract Bonding is
             initialPurchase
         );
 
-        FERC20 token = new FERC20(string.concat("fun ", _name), _ticker, initialSupply, maxTx);
+        FERC20 token = new FERC20(
+            string.concat("fun ", _name),
+            _ticker,
+            initialSupply,
+            maxTx
+        );
         uint256 supply = token.totalSupply();
 
         address _pair = factory.createPair(address(token), assetToken);
@@ -423,7 +422,7 @@ contract Bonding is
 
         IERC20(router.assetToken()).forceApprove(agentFactory, assetBalance);
         uint256 id = IAgentFactoryV3(agentFactory).initFromBondingCurve(
-            string.concat(_token.data._name, " by Virtuals"),
+            string.concat(_token.data._name, " by Kex"),
             _token.data.ticker,
             _token.cores,
             _deployParams.tbaSalt,

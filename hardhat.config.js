@@ -4,8 +4,13 @@ require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
 require("@openzeppelin/hardhat-upgrades");
 require("@fireblocks/hardhat-fireblocks");
+// import * as tenderly from "@tenderly/hardhat-tenderly";
+// const tenderly = require("@tenderly/hardhat-tenderly");
+// const tenderly = require("@tenderly/hardhat-tenderly");
 
+// console.log(t);
 const { ApiBaseUrl } = require("@fireblocks/fireblocks-web3-provider");
+// tenderly.setup({ automaticVerifications: true });
 
 module.exports = {
   solidity: {
@@ -21,19 +26,25 @@ module.exports = {
   namedAccounts: {
     deployer: `privatekey://${process.env.PRIVATE_KEY}`,
   },
+
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: {
+      "sepolia": "X378AFIZTHRVUWEV49AIG79GW37Q2TAN7N",
+      'sagaevm': 'empty'
+    },
     customChains: [
       {
-        network: "base_sepolia",
-        chainId: 84532,
+        network: "sagaevm",
+        chainId: 5464,
         urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
-          browserURL: "https://sepolia.basescan.org/",
-        },
-      },
-    ],
+          apiURL: "https://api-sagaevm-5464-1.sagaexplorer.io/api",
+          browserURL: "https://sagaevm.sagaexplorer.io:443"
+        }
+      }
+    ]
   },
+
+
   networks: {
     base: {
       url: "https://mainnet.base.org",
@@ -89,5 +100,27 @@ module.exports = {
       url: "https://rpc.ankr.com/eth_goerli",
       accounts: [process.env.PRIVATE_KEY],
     },
+
+    sepolia: {
+      url: "https://eth-sepolia.g.alchemy.com/v2/YTZ4co0ktED8_pxzfX77Lqg9Z2z4SCX_",
+      accounts: [process.env.PRIVATE_KEY],
+    },
+
+    saga: {
+      url: "https://sagaevm.jsonrpc.sagarpc.io",
+      accounts: [process.env.PRIVATE_KEY],
+    },
+
+    tenderly: {
+      url: "https://virtual.mainnet.rpc.tenderly.co/6d1560ec-298e-42e7-835c-69e6a7120317",
+      accounts: [process.env.PRIVATE_KEY],
+    },
   },
+
+  // tenderly: {
+  //   // https://docs.tenderly.co/account/projects/account-project-slug
+  //   project: "noya",
+  //   username: "hakotama",
+  //   privateVerification: false
+  // },
 };
