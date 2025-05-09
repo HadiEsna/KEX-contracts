@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
-
+import "hardhat/console.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
@@ -10,6 +10,8 @@ import "../pool/IUniswapV2Router02.sol";
 import "../pool/IUniswapV2Factory.sol";
 import "./IAgentToken.sol";
 import "./IAgentFactory.sol";
+import "../poolV3/IUniswapV3Factory.sol";
+import "../poolV3/INonfungiblePositionManager.sol";
 
 contract AgentToken is
     ContextUpgradeable,
@@ -29,6 +31,8 @@ contract AgentToken is
     uint256 public botProtectionDurationInSeconds;
     bool internal _tokenHasTax;
     IUniswapV2Router02 internal _uniswapRouter;
+    IUniswapV3Factory internal _uniswapV3Factory;
+    INonfungiblePositionManager internal _nonfungiblePositionManager;
 
     uint32 public fundedDate;
     uint16 public projectBuyTaxBasisPoints;
@@ -76,48 +80,40 @@ contract AgentToken is
         _;
     }
 
-    constructor() {
-        _disableInitializers();
-    }
+    constructor() {}
 
     function initialize(
-        address[3] memory integrationAddresses_,
+        address[5] memory integrationAddresses_,
         bytes memory baseParams_,
         bytes memory supplyParams_,
         bytes memory taxParams_
     ) external initializer {
         _decodeBaseParams(integrationAddresses_[0], baseParams_);
-        _uniswapRouter = IUniswapV2Router02(integrationAddresses_[1]);
+        _uniswapV3Factory = IUniswapV3Factory(integrationAddresses_[1]);
+        _nonfungiblePositionManager = INonfungiblePositionManager(
+            integrationAddresses_[4]
+        );
         pairToken = integrationAddresses_[2];
-
         ERC20SupplyParameters memory supplyParams = abi.decode(
             supplyParams_,
             (ERC20SupplyParameters)
         );
-
         ERC20TaxParameters memory taxParams = abi.decode(
             taxParams_,
             (ERC20TaxParameters)
         );
-
         _processSupplyParams(supplyParams);
-
         uint256 lpSupply = supplyParams.lpSupply * (10 ** decimals());
         uint256 vaultSupply = supplyParams.vaultSupply * (10 ** decimals());
-
         botProtectionDurationInSeconds = supplyParams
             .botProtectionDurationInSeconds;
-
         _tokenHasTax = _processTaxParams(taxParams);
         swapThresholdBasisPoints = uint16(
             taxParams.taxSwapThresholdBasisPoints
         );
         projectTaxRecipient = taxParams.projectTaxRecipient;
-
         _mintBalances(lpSupply, vaultSupply);
-
         uniswapV2Pair = _createPair();
-
         _factory = IAgentFactory(_msgSender());
         _autoSwapInProgress = true; // We don't want to tax initial liquidity
     }
@@ -220,21 +216,15 @@ contract AgentToken is
      * @return uniswapV2Pair_ The pair address
      */
     function _createPair() internal returns (address uniswapV2Pair_) {
-        uniswapV2Pair_ = IUniswapV2Factory(_uniswapRouter.factory()).getPair(
-            address(this),
-            pairToken
-        );
-
-        if (uniswapV2Pair_ == address(0)) {
-            uniswapV2Pair_ = IUniswapV2Factory(_uniswapRouter.factory())
-                .createPair(address(this), pairToken);
-
-            emit LiquidityPoolCreated(uniswapV2Pair_);
-        }
-
-        _liquidityPools.add(uniswapV2Pair_);
-
-        return (uniswapV2Pair_);
+        address pool = _nonfungiblePositionManager
+            .createAndInitializePoolIfNecessary(
+                address(this),
+                pairToken,
+                100,
+                79228162514264337593543950336
+            );
+        _liquidityPools.add(pool);
+        return (pool);
     }
 
     /**
@@ -273,27 +263,42 @@ contract AgentToken is
         // This means that we don't need to worry about later incrememtal
         // approvals on tax swaps, as the uniswap router allowance will never
         // be decreased (see code in decreaseAllowance for reference)
-        _approve(address(this), address(_uniswapRouter), type(uint256).max);
-        IERC20(pairToken).approve(address(_uniswapRouter), type(uint256).max);
+
+        _approve(
+            address(this),
+            address(_nonfungiblePositionManager),
+            type(uint256).max
+        );
+        IERC20(pairToken).approve(
+            address(_nonfungiblePositionManager),
+            type(uint256).max
+        );
+
         // Add the liquidity:
-        (uint256 amountA, uint256 amountB, uint256 lpTokens) = _uniswapRouter
-            .addLiquidity(
-                address(this),
-                pairToken,
-                balanceOf(address(this)),
-                IERC20(pairToken).balanceOf(address(this)),
-                0,
-                0,
-                address(this),
-                block.timestamp
-            );
+        MintParams memory p = MintParams({
+            token0: address(this),
+            token1: pairToken,
+            fee: 100,
+            tickLower: -887272,
+            tickUpper: 887272,
+            amount0Desired: balanceOf(address(this)),
+            amount1Desired: IERC20(pairToken).balanceOf(address(this)),
+            amount0Min: 0,
+            amount1Min: 0,
+            recipient: lpOwner,
+            deadline: block.timestamp
+        });
+        (
+            uint256 tokenId,
+            uint128 lpTokens,
+            uint256 amountA,
+            uint256 amountB
+        ) = _nonfungiblePositionManager.mint(p);
 
         emit InitialLiquidityAdded(amountA, amountB, lpTokens);
 
         // We now set this to false so that future transactions can be eligibile for autoswaps
         _autoSwapInProgress = false;
-
-        IERC20(uniswapV2Pair).transfer(lpOwner, lpTokens);
     }
 
     /**

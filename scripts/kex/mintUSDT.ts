@@ -19,7 +19,9 @@ const hre = require("hardhat");
         let decimals = await testERC20.decimals();
         console.log("decimals:", decimals);
         let mintAmount = "1000000000000000000000000000";
-        await testERC20.mint("0xc354b08E5b5FD1a9d2aEC1E453bC8f36fA481cbf", mintAmount);
+        await testERC20.mint("0xc354b08E5b5FD1a9d2aEC1E453bC8f36fA481cbf", mintAmount, {
+            gasPrice: 0
+        });
         // await testERC20.approve(addresses.Bonding, mintAmount);
         console.log("minted");
     } catch (e) {

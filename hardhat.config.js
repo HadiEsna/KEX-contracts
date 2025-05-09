@@ -46,6 +46,13 @@ module.exports = {
 
 
   networks: {
+    hardhat: {
+      forking: {
+        url: "https://sagaevm.jsonrpc.sagarpc.io",
+        // optional: set to a specific block
+        blockNumber: 2411290
+      }
+    },
     base: {
       url: "https://mainnet.base.org",
       accounts: [process.env.PRIVATE_KEY],

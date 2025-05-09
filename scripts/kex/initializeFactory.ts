@@ -23,8 +23,17 @@ const hre = require("hardhat");
                 await testERC20.initialize
                     ("0xA7A6395Cf611D260357b611D91bf702e99d14dD2", 0, 0, {
                         // gasLimit: 5000000,
-                        // gasPrice: 0
+                        gasPrice: 0
                     });
+            }
+            let router = await testERC20.router();
+            console.log("FFactory router", router);
+            if (router === "0x0000000000000000000000000000000000000000") {
+                console.log("FFactory setting router", addresse.FRouter);
+                await testERC20.setRouter(addresse.FRouter, {
+                    // gasLimit: 5000000,
+                    gasPrice: 0
+                });
             }
         }
     } catch (e) {

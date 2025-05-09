@@ -23,7 +23,7 @@ interface IAgentNft is IValidatorRegistry {
         uint256 id,
         address to,
         string memory newTokenURI,
-        address payable theDAO,
+        address theDAO,
         address founder,
         uint8[] memory coreTypes,
         address pool,

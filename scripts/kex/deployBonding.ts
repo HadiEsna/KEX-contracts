@@ -10,7 +10,7 @@ const hre = require("hardhat");
             fs.writeFileSync(path.resolve(__dirname, './deployed.json'), JSON.stringify({}, null, 4));
         }
         let addresse = JSON.parse(fs.readFileSync(path.resolve(__dirname, './deployed.json')).toString());
-        let TestERC20 = await ethers.getContractFactory("BondingTest");
+        let TestERC20 = await ethers.getContractFactory("Bonding");
 
         let testERC20 = await TestERC20.deploy({
             gasLimit: 5000000,

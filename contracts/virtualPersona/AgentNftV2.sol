@@ -58,9 +58,7 @@ contract AgentNftV2 is
     event AgentBlacklisted(uint256 indexed virtualId, bool value);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
+    constructor() {}
 
     function initialize(address defaultAdmin) public initializer {
         __ERC721_init("Agent", "AGENT");
@@ -94,7 +92,7 @@ contract AgentNftV2 is
         uint256 virtualId,
         address to,
         string memory newTokenURI,
-        address payable theDAO,
+        address theDAO,
         address founder,
         uint8[] memory coreTypes,
         address pool,
@@ -105,19 +103,16 @@ contract AgentNftV2 is
         _mint(to, virtualId);
         _setTokenURI(virtualId, newTokenURI);
         VirtualInfo storage info = virtualInfos[virtualId];
-        info.dao = theDAO;
         info.coreTypes = coreTypes;
         info.founder = founder;
-        IERC5805 daoToken = GovernorVotes(theDAO).token();
+        // // IERC5805 daoToken = GovernorVotes(theDAO).token();
         info.token = token;
-
         VirtualLP storage lp = virtualLPs[virtualId];
         lp.pool = pool;
-        lp.veToken = address(daoToken);
-
-        _stakingTokenToVirtualId[address(daoToken)] = virtualId;
-        _addValidator(virtualId, founder);
-        _initValidatorScore(virtualId, founder);
+        // lp.veToken = address(daoToken);
+        // _stakingTokenToVirtualId[address(daoToken)] = virtualId;
+        // _addValidator(virtualId, founder);
+        // _initValidatorScore(virtualId, founder);
         return virtualId;
     }
 

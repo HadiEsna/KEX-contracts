@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Modified from https://github.com/sourlodine/Pump.fun-Smart-Contract/blob/main/contracts/PumpFun.sol
 pragma solidity ^0.8.20;
-
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -204,7 +204,6 @@ contract Bonding is Initializable, Ownable, ReentrancyGuard {
             address(this),
             initialPurchase
         );
-
         FERC20 token = new FERC20(
             string.concat("fun ", _name),
             _ticker,
@@ -212,17 +211,12 @@ contract Bonding is Initializable, Ownable, ReentrancyGuard {
             maxTx
         );
         uint256 supply = token.totalSupply();
-
         address _pair = factory.createPair(address(token), assetToken);
-
         bool approved = _approval(address(router), address(token), supply);
         require(approved);
-
         uint256 k = ((K * 10000) / assetRate);
         uint256 liquidity = (((k * 10000 ether) / supply) * 1 ether) / 10000;
-
         router.addInitialLiquidity(address(token), supply, liquidity);
-
         Data memory _data = Data({
             token: address(token),
             name: string.concat("fun ", _name),
@@ -255,32 +249,23 @@ contract Bonding is Initializable, Ownable, ReentrancyGuard {
         });
         tokenInfo[address(token)] = tmpToken;
         tokenInfos.push(address(token));
-
         bool exists = _checkIfProfileExists(msg.sender);
-
         if (exists) {
             Profile storage _profile = profile[msg.sender];
-
             _profile.tokens.push(address(token));
         } else {
             bool created = _createUserProfile(msg.sender);
-
             if (created) {
                 Profile storage _profile = profile[msg.sender];
-
                 _profile.tokens.push(address(token));
             }
         }
-
         uint n = tokenInfos.length;
-
         emit Launched(address(token), _pair, n);
-
         // Make initial purchase
         IERC20(assetToken).forceApprove(address(router), initialPurchase);
         router.buy(initialPurchase, address(token), address(this));
         token.transfer(msg.sender, token.balanceOf(address(this)));
-
         return (address(token), _pair, n);
     }
 
