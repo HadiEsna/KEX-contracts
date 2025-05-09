@@ -20,9 +20,9 @@ const hre = require("hardhat");
             let owner = await testERC20.factory();
             console.log("owner:", owner);
             if (owner === "0x0000000000000000000000000000000000000000") {
-                await testERC20.initialize(addresse.FFactory, addresse.FRouter, "0xA7A6395Cf611D260357b611D91bf702e99d14dD2", 0, 0, 0, "0", "0xA7A6395Cf611D260357b611D91bf702e99d14dD2", "0", {
+                await testERC20.initialize(addresse.FFactory, addresse.FRouter, "0xA7A6395Cf611D260357b611D91bf702e99d14dD2", "100000000000000000000", "1000000000", "5000", 100, "0xA7A6395Cf611D260357b611D91bf702e99d14dD2", "125000000000000000000000000", {
                     // gasLimit: 5000000,
-                    // gasPrice: 0
+                    gasPrice: 0
                 });
             }
 

@@ -351,7 +351,7 @@ contract AgentFactoryV2 is
     ) internal returns (address instance) {
         instance = Clones.clone(tokenImplementation);
         IAgentToken(instance).initialize(
-            [_tokenAdmin, _uniswapRouter, assetToken],
+            [_tokenAdmin, _uniswapRouter, assetToken, address(0), address(0)],
             abi.encode(name, symbol),
             _tokenSupplyParams,
             _tokenTaxParams

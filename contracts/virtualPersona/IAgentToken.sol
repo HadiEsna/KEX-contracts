@@ -6,12 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IERC20Config.sol";
 import "./IErrors.sol";
 
-interface IAgentToken is
-    IERC20,
-    IERC20Config,
-    IERC20Metadata,
-    IErrors
-{
+interface IAgentToken is IERC20, IERC20Config, IERC20Metadata, IErrors {
     event AutoSwapThresholdUpdated(uint256 oldThreshold, uint256 newThreshold);
 
     event ExternalCallError(uint256 identifier);
@@ -275,7 +270,7 @@ interface IAgentToken is
      * param lpSupply_  Initial supply to be minted for LP
      */
     function initialize(
-        address[3] memory integrationAddresses_,
+        address[5] memory integrationAddresses_,
         bytes memory baseParams_,
         bytes memory supplyParams_,
         bytes memory taxParams_

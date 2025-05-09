@@ -394,7 +394,7 @@ contract AgentFactoryV4 is
     ) internal returns (address instance) {
         instance = Clones.clone(tokenImplementation);
         IAgentToken(instance).initialize(
-            [_tokenAdmin, _uniswapRouter, assetToken],
+            [_tokenAdmin, _uniswapRouter, assetToken, address(0), address(0)],
             abi.encode(name, symbol),
             tokenSupplyParams_,
             _tokenTaxParams
@@ -657,7 +657,6 @@ contract AgentFactoryV4 is
     function _createPair(
         address tokenAddr
     ) internal returns (address uniswapV2Pair_) {
-        
         IUniswapV2Factory factory = IUniswapV2Factory(
             IUniswapV2Router02(_uniswapRouter).factory()
         );

@@ -1,5 +1,7 @@
 // import { parseEther } from "ethers";
 import { ethers } from "hardhat";
+import { tenderly } from "hardhat"
+
 import fs from "fs";
 import path from "path";
 const hre = require("hardhat");
@@ -10,28 +12,29 @@ const hre = require("hardhat");
             fs.writeFileSync(path.resolve(__dirname, './deployed.json'), JSON.stringify({}, null, 4));
         }
         let addresse = JSON.parse(fs.readFileSync(path.resolve(__dirname, './deployed.json')).toString());
-        let TestERC20 = await ethers.getContractFactory("Bonding");
 
+        let TestERC20 = await ethers.getContractFactory("AgentFactoryV3");
         let testERC20 = await TestERC20.deploy({
-            gasLimit: 5000000,
-            gasPrice: 0
+            // gasLimit: 5000000,
+            // gasPrice: 0
         });
-        addresse.Bonding = await testERC20.getAddress();
-        console.log("Bonding initialized, waiting for 10s", addresse.Bonding);
+        // await testERC20.deployed();
+        addresse.agentFactory = await testERC20.getAddress();
+
+        console.log("agentFactory deployed to:", addresse.agentFactory);
         await new Promise((resolve) => {
             setTimeout(resolve, 30000);
         });
-        console.log("Bonding verifying");
+        console.log("agentFactory verifying");
         await hre
             .run("verify:verify", {
-                address: addresse.Bonding,
+                address: await testERC20.getAddress(),
                 constructorArguments: [
                 ],
             })
             .catch((error: any) => {
                 console.error(error);
             });
-
         fs.writeFileSync(path.resolve(__dirname, './deployed.json'), JSON.stringify(addresse, null, 4));
 
     } catch (e) {

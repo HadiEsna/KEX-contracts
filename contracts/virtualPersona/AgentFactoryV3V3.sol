@@ -16,7 +16,7 @@ import "./IAgentDAO.sol";
 import "./IAgentNft.sol";
 import "../libs/IERC6551Registry.sol";
 
-contract AgentFactoryV3 is
+contract AgentFactoryV3V3 is
     IAgentFactoryV3,
     Initializable,
     AccessControl,
@@ -100,6 +100,8 @@ contract AgentFactoryV3 is
     ///////////////////////////////////////////////////////////////
     address[] public allTradingTokens;
     address private _uniswapRouter;
+    address private _uniswapFactory;
+    address private _nftPositionManager;
     address public veTokenImplementation;
     address private _minter; // Unused
     address private _tokenAdmin;
@@ -114,10 +116,7 @@ contract AgentFactoryV3 is
 
     ///////////////////////////////////////////////////////////////
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
+    constructor() {}
 
     function initialize(
         address tokenImplementation_,
@@ -240,62 +239,34 @@ contract AgentFactoryV3 is
             _applications[id].status == ApplicationStatus.Active,
             "Application is not active"
         );
-
         require(_tokenAdmin != address(0), "Token admin not set");
-
         Application storage application = _applications[id];
-
         uint256 initialAmount = application.withdrawableAmount;
         application.withdrawableAmount = 0;
         application.status = ApplicationStatus.Executed;
-
         // C1
         address token = _createNewAgentToken(
             application.name,
             application.symbol,
             tokenSupplyParams_
         );
-
         // C2
         address lp = IAgentToken(token).liquidityPools()[0];
         IERC20(assetToken).safeTransfer(token, initialAmount);
         IAgentToken(token).addInitialLiquidity(address(this));
-
-        // C3
-        address veToken = _createNewAgentVeToken(
-            string.concat("Staked ", application.name),
-            string.concat("s", application.symbol),
-            lp,
-            application.proposer,
-            canStake
-        );
-
-        // C4
-        string memory daoName = string.concat(application.name, " DAO");
-        address payable dao = payable(
-            _createNewDAO(
-                daoName,
-                IVotes(veToken),
-                application.daoVotingPeriod,
-                application.daoThreshold
-            )
-        );
-
-        // C5
         uint256 virtualId = IAgentNft(nft).nextVirtualId();
         IAgentNft(nft).mint(
             virtualId,
             _vault,
             application.tokenURI,
-            dao,
+            address(0),
             application.proposer,
             application.cores,
             lp,
             token
         );
         application.virtualId = virtualId;
-
-        // C6
+        // // C6
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -308,16 +279,14 @@ contract AgentFactoryV3 is
             virtualId
         );
         IAgentNft(nft).setTBA(virtualId, tbaAddress);
-
-        // C7
-        IERC20(lp).approve(veToken, type(uint256).max);
-        IAgentVeToken(veToken).stake(
-            IERC20(lp).balanceOf(address(this)),
-            application.proposer,
-            defaultDelegatee
+        emit NewPersona(
+            virtualId,
+            token,
+            address(0),
+            tbaAddress,
+            address(0),
+            lp
         );
-
-        emit NewPersona(virtualId, token, dao, tbaAddress, veToken, lp);
     }
 
     function executeApplication(uint256 id, bool canStake) public noReentrant {
@@ -366,8 +335,15 @@ contract AgentFactoryV3 is
         bytes memory tokenSupplyParams_
     ) internal returns (address instance) {
         instance = Clones.clone(tokenImplementation);
+        require(_uniswapFactory != address(0), "_uniswapFactory not set");
         IAgentToken(instance).initialize(
-            [_tokenAdmin, _uniswapRouter, assetToken, address(0), address(0)],
+            [
+                _tokenAdmin,
+                _uniswapFactory,
+                assetToken,
+                _uniswapRouter,
+                _nftPositionManager
+            ],
             abi.encode(name, symbol),
             tokenSupplyParams_,
             _tokenTaxParams
@@ -434,6 +410,18 @@ contract AgentFactoryV3 is
         address router
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _uniswapRouter = router;
+    }
+
+    function setUniswapFactory(
+        address factory
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _uniswapFactory = factory;
+    }
+
+    function setUniswapNFTPositionManager(
+        address manager
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _nftPositionManager = manager;
     }
 
     function setTokenAdmin(
@@ -530,13 +518,11 @@ contract AgentFactoryV3 is
             "Insufficient asset token allowance"
         );
         require(cores.length > 0, "Cores must be provided");
-
         IERC20(assetToken).safeTransferFrom(
             sender,
             address(this),
             applicationThreshold_
         );
-
         uint256 id = _nextId++;
         uint256 proposalEndBlock = block.number; // No longer required in v2
         Application memory application = Application(
@@ -556,7 +542,6 @@ contract AgentFactoryV3 is
         );
         _applications[id] = application;
         emit NewApplication(id);
-
         return id;
     }
 
@@ -575,11 +560,8 @@ contract AgentFactoryV3 is
             0,
             vault
         );
-
         _executeApplication(id, true, tokenSupplyParams);
-
         Application memory application = _applications[id];
-
         return IAgentNft(nft).virtualInfo(application.virtualId).token;
     }
 

@@ -16,7 +16,7 @@ const hre = require("hardhat");
         let TestERC20 = await ethers.getContractFactory("FFactory");
         let testERC20 = await TestERC20.deploy({
             // gasLimit: 5000000,
-            // gasPrice: 0
+            gasPrice: 0
         });
         // await testERC20.deployed();
         addresse.FFactory = await testERC20.getAddress();

@@ -18,8 +18,16 @@ const hre = require("hardhat");
             let testERC20 = await TestERC20.attach(addresse.FRouter);
             let role = await testERC20.ADMIN_ROLE();
             let role2 = await testERC20.EXECUTOR_ROLE();
-            await testERC20.grantRole(role, addresse.Bonding);
-            await testERC20.grantRole(role2, addresse.Bonding);
+            let ifRole = await testERC20.hasRole(role, addresse.Bonding);
+            let ifRole2 = await testERC20.hasRole(role2, addresse.Bonding);
+            console.log("ADMIN_ROLE:", ifRole);
+            console.log("EXECUTOR_ROLE:", ifRole2);
+            await testERC20.grantRole(role, addresse.Bonding,
+                { gasPrice: 0 }
+            );
+            await testERC20.grantRole(role2, addresse.Bonding,
+                { gasPrice: 0 }
+            );
             console.log("role granted");
         }
     } catch (e) {
