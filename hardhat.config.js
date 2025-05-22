@@ -50,7 +50,7 @@ module.exports = {
       forking: {
         url: "https://sagaevm.jsonrpc.sagarpc.io",
         // optional: set to a specific block
-        blockNumber: 2411290
+        blockNumber: 2659118
       }
     },
     base: {

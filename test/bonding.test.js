@@ -4,7 +4,7 @@ const { ethers, upgrades } = require("hardhat");
 
 describe("Bonding", function () {
     let deployer;
-    let FFactory, fFactory, FRouter, fRouter, AgentFactory, agentFactory, Bonding, bonding, TestERC20, testERC20, AgentNFT, agentNFT, AgentDaoImplementation, agentDaoImplementation, AgentVeToken, agentVeToken, AgentToken, agentToken, TBA, tba;
+    let FFactory, fFactory, FRouter, fRouter, AgentFactory, agentFactory, Bonding, bonding, TestERC20, testERC20, swapRouter, AgentNFT, agentNFT, AgentDaoImplementation, agentDaoImplementation, AgentVeToken, agentVeToken, AgentToken, agentToken, TBA, tba;
     let ownerAdddress = "0xA7A6395Cf611D260357b611D91bf702e99d14dD2";
     const maxTx = "100";
     const gradThreshold = "125000000000000000000000000";
@@ -26,14 +26,16 @@ describe("Bonding", function () {
             ownerAdddress,
             "0x1000000000000000000",
         ]);
+
         testERC20 = await ethers.getContractAt("TestERC20", "0xBef2b76dE8504BFe26E10a81bB5D132614B4dc8A");
+        swapRouter = await ethers.getContractAt("IV3SwapRouter", "0x346239972d1fa486FC4a521031BC81bFB7D6e8a4");
+
         FFactory = await ethers.getContractFactory("FFactory");
         fFactory = await FFactory.connect(deployer).deploy();
         await fFactory.connect(deployer).initialize(ownerAdddress, 0, 0);
 
         FRouter = await ethers.getContractFactory("FRouter");
         fRouter = await FRouter.connect(deployer).deploy();
-        // console.log("fRouter deployed to:", fRouter.target, fFactory.target, testERC20.target);
         await fRouter.connect(deployer).initialize(fFactory.target, testERC20.target);
 
         AgentToken = await ethers.getContractFactory("AgentToken");
@@ -41,17 +43,7 @@ describe("Bonding", function () {
 
         TBA = await ethers.getContractFactory("ERC6551Registry");
         tba = await TBA.connect(deployer).deploy();
-
-        AgentVeToken = await ethers.getContractFactory("AgentVeToken");
-        agentVeToken = await AgentVeToken.connect(deployer).deploy();
-        // increase block number by 1
-        // await network.provider.send("hardhat_mine", ["0x10"]);
-        // increase time by 1 day
-        // await network.provider.send("evm_increaseTime", [86400]);
-
-        // AgentDaoImplementation = await ethers.getContractFactory("AgentDAO");
-        // agentDaoImplementation = await AgentDaoImplementation.connect(deployer).deploy();
-
+        // tba = await TBA.connect(deployer).deploy();
         AgentNFT = await ethers.getContractFactory("AgentNftV2");
         agentNFT = await AgentNFT.connect(deployer).deploy();
         await agentNFT.connect(deployer).initialize(
@@ -73,7 +65,6 @@ describe("Bonding", function () {
             0
         );
 
-        await agentFactory.connect(deployer).setTokenAdmin(ownerAdddress);
 
         Bonding = await ethers.getContractFactory("Bonding");
         bonding = await Bonding.connect(deployer).deploy();
@@ -88,14 +79,17 @@ describe("Bonding", function () {
             agentFactory.target, // agentFactory placeholder
             gradThreshold
         );
-        await fFactory.grantRole(await fFactory.ADMIN_ROLE(), ownerAdddress);
-        await fFactory.grantRole(await fFactory.CREATOR_ROLE(), bonding.target);
-        await fRouter.grantRole(await fRouter.EXECUTOR_ROLE(), bonding.target);
-        await agentNFT.grantRole(await agentNFT.MINTER_ROLE(), agentFactory.target);
+
+        await agentFactory.connect(deployer).setTokenAdmin(ownerAdddress);
         await agentFactory.grantRole(await agentFactory.BONDING_ROLE(), bonding.target);
         await agentFactory.setUniswapFactory("0x454050C4c9190390981Ac4b8d5AFcd7aC65eEffa")
         await agentFactory.setUniswapNFTPositionManager("0xdD489C75be1039ec7d843A6aC2Fd658350B067Cf")
         await agentFactory.setTokenTaxParams(0, 0, 0, ownerAdddress)
+
+        await fFactory.grantRole(await fFactory.ADMIN_ROLE(), ownerAdddress);
+        await fFactory.grantRole(await fFactory.CREATOR_ROLE(), bonding.target);
+        await fRouter.grantRole(await fRouter.EXECUTOR_ROLE(), bonding.target);
+        await agentNFT.grantRole(await agentNFT.MINTER_ROLE(), agentFactory.target);
         await fFactory.setRouter(fRouter.target);
 
     });
@@ -142,5 +136,23 @@ describe("Bonding", function () {
         await testERC20.connect(deployer).approve(fRouter.target, purchaseAmount);
 
         await bonding.buy(purchaseAmount, tokenAddress);
+
+        let newToken = await bonding.tokenInfo(tokenAddress);
+        console.log("newToken", newToken);
+        let newTokenAddress = newToken[3];
+
+        let uniswapFactory = await ethers.getContractAt("IUniswapV3Factory", "0x454050C4c9190390981Ac4b8d5AFcd7aC65eEffa");
+        let pool = await uniswapFactory.getPool(testERC20.target, newTokenAddress, 100);
+        console.log("pool", pool);
+        await testERC20.connect(deployer).approve(swapRouter.target, 1);
+        await swapRouter.connect(deployer).exactInputSingle([
+            testERC20.target,
+            newTokenAddress,
+            100,
+            ownerAdddress,
+            1,
+            0,
+            0
+        ]);
     });
 });

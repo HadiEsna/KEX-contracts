@@ -1,8 +1,15 @@
 {
     "5464": {
         "ownerAdddress": "0xA7A6395Cf611D260357b611D91bf702e99d14dD2",
-        "fFactory": "0x8414c3c7B638E81eC34DaF13d81489D964f3a606",
+        "uniswapFactory": "0x454050C4c9190390981Ac4b8d5AFcd7aC65eEffa",
+        "uniswapNFTPositionManager": "0xdD489C75be1039ec7d843A6aC2Fd658350B067Cf",
         "assetToken": "0xBef2b76dE8504BFe26E10a81bB5D132614B4dc8A",
-        "router": "0x532bAA715B54f52fC2ba8b72F5aAac9208E337e4"
+        "FFactory": "0x73520ad4289Ed612531f870D1648A8b9C3413bcc",
+        "FRouter": "0x7C292B9Bf46e08fCE2C2D13DCFD82De35bd0745b",
+        "agentToken": "0xB7Ad68560178634D7eB01C24D3c11AA163616E18",
+        "erc6551": "0xC95FC0B15eB27a3f92f5081eaf259f94150Fb0A2",
+        "agentNft": "0xFaFA366671596dC97bAa288E2d44B4364CbbabFe",
+        "agentFactory": "0x83B82374F73E6bb43b6B8eca072ba49C7b7CEe9e",
+        "Bonding": "0x4c0fB2718b087986F45Ac6fe658B79e3B6a5103C"
     }
 }
