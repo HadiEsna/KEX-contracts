@@ -14,12 +14,12 @@ const hre = require("hardhat");
         let testERC20 = await TestERC20.attach(addresses.assetToken);
         let owner = await testERC20.owner();
         console.log("owner:", owner);
-        let balance = await testERC20.balanceOf("0xc354b08E5b5FD1a9d2aEC1E453bC8f36fA481cbf");
+        let balance = await testERC20.balanceOf("0xF0429BC11913794d51642cd087a00413B3103207");
         console.log("balance:", balance);
         let decimals = await testERC20.decimals();
         console.log("decimals:", decimals);
         let mintAmount = "1000000000000000000000000000";
-        await testERC20.mint("0xc354b08E5b5FD1a9d2aEC1E453bC8f36fA481cbf", mintAmount, {
+        await testERC20.mint("0xF0429BC11913794d51642cd087a00413B3103207", mintAmount, {
             gasPrice: 0
         });
         // await testERC20.approve(addresses.Bonding, mintAmount);

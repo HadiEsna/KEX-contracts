@@ -100,16 +100,16 @@ contract AgentFactoryV3V3 is
     ///////////////////////////////////////////////////////////////
     address[] public allTradingTokens;
     address private _uniswapRouter;
-    address private _uniswapFactory;
-    address private _nftPositionManager;
+    address public _uniswapFactory;
+    address public _nftPositionManager;
     address public veTokenImplementation;
     address private _minter; // Unused
-    address private _tokenAdmin;
+    address public tokenAdmin;
     address public defaultDelegatee;
 
     // Default agent token params
     bytes private _tokenSupplyParams;
-    bytes private _tokenTaxParams;
+    bytes public _tokenTaxParams;
     uint16 private _tokenMultiplier; // Unused
 
     bytes32 public constant BONDING_ROLE = keccak256("BONDING_ROLE");
@@ -239,7 +239,7 @@ contract AgentFactoryV3V3 is
             _applications[id].status == ApplicationStatus.Active,
             "Application is not active"
         );
-        require(_tokenAdmin != address(0), "Token admin not set");
+        require(tokenAdmin != address(0), "Token admin not set");
         Application storage application = _applications[id];
         uint256 initialAmount = application.withdrawableAmount;
         application.withdrawableAmount = 0;
@@ -266,7 +266,7 @@ contract AgentFactoryV3V3 is
             token
         );
         application.virtualId = virtualId;
-        // // C6
+        // // // C6
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -338,7 +338,7 @@ contract AgentFactoryV3V3 is
         require(_uniswapFactory != address(0), "_uniswapFactory not set");
         IAgentToken(instance).initialize(
             [
-                _tokenAdmin,
+                tokenAdmin,
                 _uniswapFactory,
                 assetToken,
                 _uniswapRouter,
@@ -427,7 +427,7 @@ contract AgentFactoryV3V3 is
     function setTokenAdmin(
         address newTokenAdmin
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _tokenAdmin = newTokenAdmin;
+        tokenAdmin = newTokenAdmin;
     }
 
     function setTokenSupplyParams(
