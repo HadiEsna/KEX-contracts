@@ -54,50 +54,90 @@ export async function deployStuff(contracts: any) {
     if (!await agentFactoryConfigurations(contracts)) return;
     if (!await fFactoryConfigurations(contracts)) return;
     if (!await launch(contracts)) return;
+    if (!await buy(contracts)) return;
 }
 
-export async function launch(contracts: any) {
+export async function buy(contracts: any) {
     try {
-        const amount = "1000" + wei;
         const AssetToken = await ethers.getContractFactory("TestERC20");
         const assetToken = await AssetToken.attach(contracts.assetToken);
-
-        // await assetToken.mint(contracts.ownerAdddress, amount, {
-        //     gasPrice
-        // });
-
-        // await assetToken.approve(contracts.Bonding, amount,
-        //     {
-        //         gasPrice
-        //     }
-        // );
-        // console.log("approved");
-
 
 
         const bonding = await ethers.getContractFactory("Bonding");
         const bondingInstance = await bonding.attach(contracts.Bonding);
-        // await bondingInstance.launch("hako", "hako", [0, 2, 3, 4], "hako", "hako", ["1", "2", "3", "4"], "1000000000000000000000",
-        //     {
-        //         gasPrice
-        //     }
-        // )
+
         let purchaseAmount = "10000000" + wei;
         // await assetToken.approve(contracts.FRouter, purchaseAmount + "000000000000000000",
         //     {
         //         gasPrice
         //     }
         // );
+        // console.log("approved");
+        // await new Promise((resolve) => {
+        //     setTimeout(resolve, 10000);
+        // });
+
         let balance = await assetToken.balanceOf(contracts.ownerAdddress);
         let approveAmount = await assetToken.allowance(contracts.ownerAdddress, contracts.FRouter);
-        console.log("balance", balance, "amount", purchaseAmount, "approveAmount", approveAmount);
+        // console.log("balance", balance, "amount", purchaseAmount, "approveAmount", approveAmount);
         let tokenAddress = await bondingInstance.tokenInfos(0);
+        await bondingInstance.buy(purchaseAmount, tokenAddress, {
+            gasPrice
+        });
+
+
+        await new Promise((resolve) => {
+            setTimeout(resolve, 5000);
+        });
+
         let data = await bondingInstance.tokenInfo(tokenAddress);
         console.log("data", data);
         console.log("tokenAddress", tokenAddress);
-        // await bondingInstance.buy(purchaseAmount, tokenAddress, {
+
+    } catch (e) {
+        console.log(e);
+    }
+    return true;
+}
+
+export async function launch(contracts: any) {
+    try {
+        const amount = "1000000000000000000000";
+        const AssetToken = await ethers.getContractFactory("TestERC20");
+        const assetToken = await AssetToken.attach(contracts.assetToken);
+
+        // await assetToken.mint(contracts.ownerAdddress, amount, {
         //     gasPrice
         // });
+        let allowance = await assetToken.allowance(contracts.ownerAdddress, contracts.Bonding);
+        console.log("allowance", allowance);
+        await assetToken.approve(contracts.Bonding, amount,
+            {
+                gasPrice
+            }
+        );
+        console.log("approved");
+
+        await new Promise((resolve) => {
+            setTimeout(resolve, 10000);
+        });
+
+        console.log("launching");
+
+
+
+        const bonding = await ethers.getContractFactory("Bonding");
+        const bondingInstance = await bonding.attach(contracts.Bonding);
+        await bondingInstance.launch("hako", "hako", [0, 2, 3, 4], "hako", "hako", ["1", "2", "3", "4"], amount,
+            {
+                gasPrice
+            }
+        )
+
+        console.log("launched");
+        await new Promise((resolve) => {
+            setTimeout(resolve, 10000);
+        });
     } catch (e) {
         console.log(e);
     }
@@ -203,6 +243,16 @@ export async function agentFactoryConfigurations(contracts: any) {
                 }
             )
         }
+        const Bonding = await ethers.getContractFactory("Bonding");
+        const bondingInstance = await Bonding.attach(contracts.Bonding);
+        let ag = await bondingInstance.agentFactory();
+        console.log("ag", ag);
+        if (ag === address0 || ag !== contracts.agentFactory) {
+            await bondingInstance.setAgentFactory(contracts.agentFactory, {
+                gasPrice
+            });
+        }
+
     } catch (e) {
         console.log(e);
         return false;
@@ -222,6 +272,10 @@ export async function deployBonding(contracts: any) {
             }
         );
         contracts.Bonding = await bonding.getAddress()
+        await new Promise((resolve) => {
+            console.log("Bonding initialized, waiting for 10s", contracts.Bonding);
+            setTimeout(resolve, 10000);
+        });
         return true;
     } catch (e) {
         console.log(e);
@@ -307,6 +361,10 @@ export async function deployAgentFactoryV3V3(contracts: any) {
             }
         );
         contracts.agentFactory = await agentFactory.getAddress()
+        await new Promise((resolve) => {
+            console.log("agentFactory initialized, waiting for 10s", contracts.Bonding);
+            setTimeout(resolve, 10000);
+        });
         return true;
     } catch (e) {
         console.log(e);

@@ -115,6 +115,10 @@ contract Bonding is Initializable, Ownable, ReentrancyGuard {
         gradThreshold = gradThreshold_;
     }
 
+    function setAgentFactory(address agentFactory_) public onlyOwner {
+        agentFactory = agentFactory_;
+    }
+
     function _createUserProfile(address _user) internal returns (bool) {
         address[] memory _tokens;
 
@@ -380,30 +384,22 @@ contract Bonding is Initializable, Ownable, ReentrancyGuard {
 
     function _openTradingOnUniswap(address tokenAddress) private {
         FERC20 token_ = FERC20(tokenAddress);
-
         Token storage _token = tokenInfo[tokenAddress];
-
         require(
             _token.trading && !_token.tradingOnUniswap,
             "trading is already open"
         );
-
         _token.trading = false;
         _token.tradingOnUniswap = true;
-
         // Transfer asset tokens to bonding contract
         address pairAddress = factory.getPair(
             tokenAddress,
             router.assetToken()
         );
-
         IFPair pair = IFPair(pairAddress);
-
         uint256 assetBalance = pair.assetBalance();
         uint256 tokenBalance = pair.balance();
-
         router.graduate(tokenAddress);
-
         IERC20(router.assetToken()).forceApprove(agentFactory, assetBalance);
         uint256 id = IAgentFactoryV3(agentFactory).initFromBondingCurve(
             string.concat(_token.data._name, " by Kex"),
@@ -416,26 +412,22 @@ contract Bonding is Initializable, Ownable, ReentrancyGuard {
             assetBalance,
             _token.creator
         );
-
-        address agentToken = IAgentFactoryV3(agentFactory)
-            .executeBondingCurveApplication(
-                id,
-                _token.data.supply / (10 ** token_.decimals()),
-                tokenBalance / (10 ** token_.decimals()),
-                pairAddress
-            );
-        _token.agentToken = agentToken;
-
-        router.approval(
-            pairAddress,
-            agentToken,
-            address(this),
-            IERC20(agentToken).balanceOf(pairAddress)
-        );
-
-        token_.burnFrom(pairAddress, tokenBalance);
-
-        emit Graduated(tokenAddress, agentToken);
+        // address agentToken = IAgentFactoryV3(agentFactory)
+        //     .executeBondingCurveApplication(
+        //         id,
+        //         _token.data.supply / (10 ** token_.decimals()),
+        //         tokenBalance / (10 ** token_.decimals()),
+        //         pairAddress
+        //     );
+        // _token.agentToken = agentToken;
+        // router.approval(
+        //     pairAddress,
+        //     agentToken,
+        //     address(this),
+        //     IERC20(agentToken).balanceOf(pairAddress)
+        // );
+        // token_.burnFrom(pairAddress, tokenBalance);
+        // emit Graduated(tokenAddress, agentToken);
     }
 
     function unwrapToken(
