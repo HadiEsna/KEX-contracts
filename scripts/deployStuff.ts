@@ -30,7 +30,7 @@ const gasPrice = 0;
         if (verify) {
             await verifyStuff(chainAddresses);
         }
-        fs.writeFileSync(path.resolve(__dirname, './deployedUpdated.json'), JSON.stringify(addresse, null, 4));
+        fs.writeFileSync(path.resolve(__dirname, './deployedUpdated2.json'), JSON.stringify(addresse, null, 4));
 
     } catch (e) {
         console.log(e);

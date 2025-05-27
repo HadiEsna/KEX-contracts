@@ -412,22 +412,22 @@ contract Bonding is Initializable, Ownable, ReentrancyGuard {
             assetBalance,
             _token.creator
         );
-        // address agentToken = IAgentFactoryV3(agentFactory)
-        //     .executeBondingCurveApplication(
-        //         id,
-        //         _token.data.supply / (10 ** token_.decimals()),
-        //         tokenBalance / (10 ** token_.decimals()),
-        //         pairAddress
-        //     );
-        // _token.agentToken = agentToken;
-        // router.approval(
-        //     pairAddress,
-        //     agentToken,
-        //     address(this),
-        //     IERC20(agentToken).balanceOf(pairAddress)
-        // );
-        // token_.burnFrom(pairAddress, tokenBalance);
-        // emit Graduated(tokenAddress, agentToken);
+        address agentToken = IAgentFactoryV3(agentFactory)
+            .executeBondingCurveApplication(
+                id,
+                _token.data.supply / (10 ** token_.decimals()),
+                tokenBalance / (10 ** token_.decimals()),
+                pairAddress
+            );
+        _token.agentToken = agentToken;
+        router.approval(
+            pairAddress,
+            agentToken,
+            address(this),
+            IERC20(agentToken).balanceOf(pairAddress)
+        );
+        token_.burnFrom(pairAddress, tokenBalance);
+        emit Graduated(tokenAddress, agentToken);
     }
 
     function unwrapToken(
