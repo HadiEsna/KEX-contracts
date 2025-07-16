@@ -48,9 +48,9 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        url: "https://sagaevm.jsonrpc.sagarpc.io",
+        url: "http://127.0.0.1:8545",
         // optional: set to a specific block
-        blockNumber: 2659118
+        // blockNumber: 3551978
       }
     },
     base: {
